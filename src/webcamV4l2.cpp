@@ -41,44 +41,51 @@ bool WebcamV4l2::init() {
 
 	Godot::print("Open Webcam");
 
-	thread = std::thread([&]{
+
+	auto s = settings;
+
+	thread = std::thread([&, s]{
+
 		bKeepRunning = true;
 
+		std::array<Buffer, 4> buffers{};
+		int fd;
+
+		auto dev = s.device;
+
 		// if device is empty or auto , try to autodetect
-		if (settings.device == "auto") {
+		if (dev == "auto" || dev.empty()) {
 			for (int i = 0; i < 64; i++) {
 				String path = "/dev/video" + String::num_int64(i);
 				if (access(path.ascii().get_data(), F_OK) != -1) {
-					settings.device = path;
+					dev = path;
 					break;
 				}
 			}
 		}
 
-		if (settings.device == "auto") {
+		if (dev == "auto") {
 			Godot::print_error("Could not detect a camera", __FUNCTION__, __FILE__, __LINE__);
 		}
 
 		// open device
-		fd = v4l2_open(settings.device.ascii().get_data(), O_RDWR | O_NONBLOCK, 0);
+		fd = v4l2_open(dev.ascii().get_data(), O_RDWR | O_NONBLOCK, 0);
 		if (fd < 0) {
-			Godot::print_error("Failed to open device '" + settings.device + "'", __FUNCTION__, __FILE__, __LINE__);
-			return false;
+			Godot::print_error("Failed to open device '" + s.device + "'", __FUNCTION__, __FILE__, __LINE__);
 		}
 
 		// check if device is ready
 		v4l2_capability capability{};
 		if (ioctl(fd, VIDIOC_QUERYCAP, &capability) < 0) {
 			Godot::print_error("Failed to get device capabilities", __FUNCTION__, __FILE__, __LINE__);
-			return false;
 		}
 
 		// set Image format
 		v4l2_format imageFormat;
 		imageFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		imageFormat.fmt.pix.width = settings.width;
-		imageFormat.fmt.pix.height = settings.height;
-		switch (settings.format) {
+		imageFormat.fmt.pix.width = s.width;
+		imageFormat.fmt.pix.height = s.height;
+		switch (s.format) {
 			case WebcamSettings::MJPEG:
 				imageFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
 				break;
@@ -94,7 +101,6 @@ bool WebcamV4l2::init() {
 		// tell the device you are using this format
 		if (ioctl(fd, VIDIOC_S_FMT, &imageFormat) < 0) {
 			Godot::print_error("Failed to set capture format", __FUNCTION__, __FILE__, __LINE__);
-			return false;
 		}
 
 		v4l2_requestbuffers req{};
@@ -104,7 +110,6 @@ bool WebcamV4l2::init() {
 
 		if(xioctl(fd, VIDIOC_REQBUFS, &req) < 0){
 			Godot::print_error("Failed request buffers", __FUNCTION__, __FILE__, __LINE__);
-			return false;
 		}
 
 		for (unsigned i = 0; i < req.count; i++) {
@@ -115,7 +120,6 @@ bool WebcamV4l2::init() {
 			buf.index = i;
 			if(xioctl(fd, VIDIOC_QUERYBUF, &buf) < 0){
 				Godot::print_error("Failed to request buffer", __FUNCTION__, __FILE__, __LINE__);
-				return false;
 			}
 
 			// map data to buffer
@@ -134,14 +138,12 @@ bool WebcamV4l2::init() {
 			buf.index = i;
 			if(xioctl(fd, VIDIOC_QBUF, &buf) < 0){
 				Godot::print_error("Failed to exchange buffer", __FUNCTION__, __FILE__, __LINE__);
-				return false;
 			}
 		}
 
 		auto type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		if(xioctl(fd, VIDIOC_STREAMON, &type) < 0){
 			Godot::print_error("Failed to set capture format", __FUNCTION__, __FILE__, __LINE__);
-			return false;
 		}
 
 		while(bKeepRunning){
@@ -212,6 +214,7 @@ bool WebcamV4l2::init() {
 
 	return true;
 }
+
 
 void WebcamV4l2::updateFrame() {
 }

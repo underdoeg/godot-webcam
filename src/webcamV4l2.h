@@ -15,10 +15,6 @@ class WebcamV4l2 : public Webcam {
 		size_t length;
 	};
 
-	std::array<Buffer, 4> buffers;
-
-	int fd = -1;
-
 	void shutdown();
 
 	std::atomic_bool bKeepRunning;
