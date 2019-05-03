@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://camera.cam" type="VideoStream" id=1]
+
+[node name="root" type="Node2D"]
+
+[node name="player" type="VideoPlayer" parent="."]
+margin_right = 1024.0
+margin_bottom = 602.0
+stream = ExtResource( 1 )
+
