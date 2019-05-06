@@ -1,60 +1,90 @@
 #pragma once
 
-#include <Godot.hpp>
+#include <atomic>
+#include <memory>
 
-struct WebcamSettings{
-	enum Format{
-		RGB,
+#include <Godot.hpp>
+#include <Node.hpp>
+#include <Reference.hpp>
+#include <gen/ImageTexture.hpp>
+#include <gen/EditorPlugin.hpp>
+
+//class WebcamPlugin : public godot::EditorPlugin {
+//GODOT_CLASS(WebcamPlugin, godot::EditorPlugin)
+//
+//public:
+//	void _enter_tree() {
+//		godot::Godot::print("ENTER TREE");
+////		add_custom_type("MyType", "Node", "somehow load the MyType Class");
+//	}
+//
+//	static void _register_methods() {
+//		register_method("_enter_tree", &WebcamPlugin::_enter_tree);
+//
+//	}
+//};
+
+class Webcam : public godot::Node {
+GODOT_CLASS(Webcam, godot::Node)
+
+public:
+
+	enum CaptureFormat {
 		MJPEG,
+		RAW,
 		H264
 	};
 
+	struct Settings {
+		int w;
+		int h;
+		godot::String dev;
+		CaptureFormat captureFormat;
+	};
+
+	class Implementation {
+	public:
+		godot::Ref<godot::Image> image;
+
+		// returns true if image data has changed
+		virtual bool process(float dt) = 0;
+		virtual void open(Settings s) = 0;
+		virtual void close() = 0;
+	};
+
+	bool autoStart = false;
+	int width = 1280;
+	int height = 720;
 	godot::String device = "auto";
-	int width = 800;
-	int height = 600;
-	Format format = MJPEG;
+	// TODO: allow other formats
+	godot::String captureFormat = "mjpeg";
+
+	godot::Ref<godot::ImageTexture> texture;
+
+	static void _register_methods() {
+		register_property("auto_start", &Webcam::autoStart, false);
+		register_property("width", &Webcam::width, 1280);
+		register_property("height", &Webcam::height, 720);
+		register_property("device", &Webcam::device, godot::String("auto"));
+
+		register_method("_process", &Webcam::_process);
+		register_method("_enter_tree", &Webcam::_enter_tree);
+		register_method("start", &Webcam::start);
+		register_method("stop", &Webcam::stop);
+		register_method("getTexture", &Webcam::getTexture);
+	}
+
+	void _init();
+	void _enter_tree();
+
+	void _process(float dt);
+
+	void start();
+
+	void stop();
+
+	godot::Ref<godot::ImageTexture> getTexture();
+
+private:
+	std::shared_ptr<Implementation> impl;
 };
-
-class Webcam{
-public:
-	virtual ~Webcam(){};
-	WebcamSettings settings;
-	godot_real time;
-	godot_pool_byte_array frame;
-	virtual bool init() = 0;
-	virtual void updateFrame() = 0;
-};
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-void init(const godot_gdnative_ext_videodecoder_api_struct *videoApi);
-
-void *createPlayer(godot_object *obj);
-
-void destroyPlayer(void *data);
-
-const char *getPluginName();
-
-const char **getSupportedExtensions(int *count);
-
-godot_bool openFile(void *data, void *file);
-
-godot_real getLength(const void *data);
-
-godot_real getPosition(const void *data);
-
-void seek(void *data, godot_real pos);
-
-void setAudioTrack(void *data, godot_int track);
-
-void update(void *data, godot_real dt);
-
-godot_pool_byte_array *getVideoFrame(void *data);
-
-godot_int getAudioFrame(void *data, float *, int);
-
-godot_int getChannels(const void *data);
-
-godot_int getMixRate(const void *data);
-
-godot_vector2 getTextureSize(const void *data);

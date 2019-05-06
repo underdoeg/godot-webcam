@@ -1,8 +1,8 @@
-//
-// Created by phwhitfield on 5/3/19.
-//
+////
+//// Created by phwhitfield on 5/3/19.
+////
 
-#include "webcamV4l2.h"
+#include "webcamV4L2.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,42 +16,28 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <libv4l2.h>
-
-#include <OS.hpp>
-
-#include "jpgd.h"
-
-#ifdef V4L2_FOUND
+#include <fstream>
+#include <turbojpeg.h>
 
 using namespace godot;
 
-int xioctl(int fh, int request, void *arg) {
+static int xioctl(int fd, int request, void *arg) {
 	int r;
-
-	do {
-		r = ioctl(fh, request, arg);
-	} while (-1 == r && EINTR == errno);
-
+	do r = ioctl(fd, request, arg);
+	while (-1 == r && EINTR == errno);
 	return r;
 }
 
-bool WebcamV4l2::init() {
+void WebcamV4L2::open(Webcam::Settings settings) {
+	close();
 
-	shutdown();
-
-	Godot::print("Open Webcam");
-
-
-	auto s = settings;
-
-	thread = std::thread([&, s]{
-
+	thread = std::thread([&, settings] {
 		bKeepRunning = true;
 
 		std::array<Buffer, 4> buffers{};
 		int fd;
 
-		auto dev = s.device;
+		auto dev = settings.dev;
 
 		// if device is empty or auto , try to autodetect
 		if (dev == "auto" || dev.empty()) {
@@ -71,7 +57,7 @@ bool WebcamV4l2::init() {
 		// open device
 		fd = v4l2_open(dev.ascii().get_data(), O_RDWR | O_NONBLOCK, 0);
 		if (fd < 0) {
-			Godot::print_error("Failed to open device '" + s.device + "'", __FUNCTION__, __FILE__, __LINE__);
+			Godot::print_error("Failed to open device '" + settings.dev + "'", __FUNCTION__, __FILE__, __LINE__);
 		}
 
 		// check if device is ready
@@ -83,16 +69,16 @@ bool WebcamV4l2::init() {
 		// set Image format
 		v4l2_format imageFormat;
 		imageFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		imageFormat.fmt.pix.width = s.width;
-		imageFormat.fmt.pix.height = s.height;
-		switch (s.format) {
-			case WebcamSettings::MJPEG:
+		imageFormat.fmt.pix.width = settings.w;
+		imageFormat.fmt.pix.height = settings.h;
+		switch (settings.captureFormat) {
+			case Webcam::CaptureFormat::MJPEG:
 				imageFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
 				break;
-			case WebcamSettings::RGB:
+			case Webcam::CaptureFormat::RAW:
 				imageFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
 				break;
-			case WebcamSettings::H264:
+			case Webcam::CaptureFormat::H264:
 				imageFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_H264;
 				break;
 		}
@@ -108,7 +94,7 @@ bool WebcamV4l2::init() {
 		req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		req.memory = V4L2_MEMORY_MMAP;
 
-		if(xioctl(fd, VIDIOC_REQBUFS, &req) < 0){
+		if (xioctl(fd, VIDIOC_REQBUFS, &req) < 0) {
 			Godot::print_error("Failed request buffers", __FUNCTION__, __FILE__, __LINE__);
 		}
 
@@ -118,12 +104,13 @@ bool WebcamV4l2::init() {
 			buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 			buf.memory = V4L2_MEMORY_MMAP;
 			buf.index = i;
-			if(xioctl(fd, VIDIOC_QUERYBUF, &buf) < 0){
+			if (xioctl(fd, VIDIOC_QUERYBUF, &buf) < 0) {
 				Godot::print_error("Failed to request buffer", __FUNCTION__, __FILE__, __LINE__);
 			}
 
 			// map data to buffer
-			buffers[i].start = reinterpret_cast<uint8_t *>(v4l2_mmap(nullptr, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset));
+			auto b = v4l2_mmap(nullptr, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset);
+			buffers[i].start = reinterpret_cast<uint8_t *>(b);
 			if (MAP_FAILED == buffers[i].start) {
 				Godot::print_error("could not map buffer", __FUNCTION__, __FILE__, __LINE__);
 			} else {
@@ -136,17 +123,19 @@ bool WebcamV4l2::init() {
 			buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 			buf.memory = V4L2_MEMORY_MMAP;
 			buf.index = i;
-			if(xioctl(fd, VIDIOC_QBUF, &buf) < 0){
+			if (xioctl(fd, VIDIOC_QBUF, &buf) < 0) {
 				Godot::print_error("Failed to exchange buffer", __FUNCTION__, __FILE__, __LINE__);
 			}
 		}
 
 		auto type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		if(xioctl(fd, VIDIOC_STREAMON, &type) < 0){
+		if (xioctl(fd, VIDIOC_STREAMON, &type) < 0) {
 			Godot::print_error("Failed to set capture format", __FUNCTION__, __FILE__, __LINE__);
 		}
 
-		while(bKeepRunning){
+		PoolByteArray godotBuffer;
+
+		while (bKeepRunning) {
 			fd_set fds;
 			timeval tv{};
 			int r;
@@ -160,19 +149,12 @@ bool WebcamV4l2::init() {
 
 			r = select(fd + 1, &fds, NULL, NULL, &tv);
 
-//			Godot::print(String::num_int64(r));
-
-			if(r == EBUSY){
+			if (errno == EBUSY) {
 				Godot::print("Device is busy");
 				continue;
 			}
 
-			if (-1 == r) {
-				if (EINTR == errno)
-					continue;
-			}
-
-			if (0 == r) {
+			if (r <= 0) {
 				continue;
 			}
 
@@ -183,52 +165,42 @@ bool WebcamV4l2::init() {
 
 			// retreive buffer
 			if (-1 == xioctl(fd, VIDIOC_DQBUF, &buf)) {
-				switch (errno) {
-					case EAGAIN:
-						continue;
-					case EIO:
-					default:
-						continue;
-				}
+				continue;
 			}
 
-			int jpegSubsamp, jpegW, jpegH;
 			auto start = buffers[buf.index].start;
-			auto data = jpgd::decompress_jpeg_image_from_memory(start, buf.bytesused, &jpegW, &jpegH, &jpegSubsamp, 3);
 
-			Godot::print(String::num_int64(jpegW));
+			switch (settings.captureFormat) {
+				case Webcam::CaptureFormat::MJPEG:
+
+					if (godotBuffer.size() != buf.bytesused) {
+						godotBuffer.resize(buf.bytesused);
+					}
+
+					memcpy(godotBuffer.write().ptr(), start, buf.bytesused);
+
+					mtx.lock();
+					imageThread->load_jpg_from_buffer(godotBuffer);
+					bNewFrame = true;
+					mtx.unlock();
+					break;
+				default:
+					Godot::print("Capture format not yet implemented");
+			}
 
 			// release buffer
 			xioctl(fd, VIDIOC_QBUF, &buf);
 		}
 
-		if(xioctl(fd, VIDIOC_STREAMOFF, &type) == -1){
+		// shutdown
+		if (xioctl(fd, VIDIOC_STREAMOFF, &type) == -1) {
 			Godot::print("Can not turn off webcam stream");
 		}
-		for(auto& buffer: buffers){
-			if(buffer.length == 0) continue;
+		for (auto &buffer: buffers) {
+			if (buffer.length == 0) continue;
 			v4l2_munmap(buffer.start, buffer.length);
 		}
 		v4l2_close(fd);
+
 	});
-
-	return true;
 }
-
-
-void WebcamV4l2::updateFrame() {
-}
-
-void WebcamV4l2::shutdown() {
-	bKeepRunning = false;
-	if(thread.joinable()){
-		thread.join();
-		Godot::print("Close Webcam");
-	}
-}
-
-WebcamV4l2::~WebcamV4l2() {
-	shutdown();
-}
-
-#endif

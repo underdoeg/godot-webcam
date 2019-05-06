@@ -1,9 +1,9 @@
 [general]
 
-singleton=true
+singleton=false
 load_once=true
 symbol_prefix="godot_"
-reloadable=true
+reloadable=false
 
 [entry]
 

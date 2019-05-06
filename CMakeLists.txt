@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(godot-cpp)
 
-add_library(${PROJECT_NAME} SHARED src/init.cpp src/init.cpp src/webcam.cpp src/webcam.h src/webcamV4l2.cpp src/webcamV4l2.h src/jpgd.h src/jpgd.cpp)
+add_library(${PROJECT_NAME} SHARED src/init.cpp src/init.cpp src/webcam.cpp src/webcam.h src/webcamV4L2.cpp src/webcamV4L2.h)
 
 find_package(V4L2)
 if (V4L2_FOUND)
@@ -17,7 +17,7 @@ else ()
     message("No webcam library found --> Currently only Video4Linux2 is supported")
 endif ()
 
-target_link_libraries(${PROJECT_NAME} godot-cpp)
+target_link_libraries(${PROJECT_NAME} godot-cpp turbojpeg)
 
 
 # copy generated file to godot test project
