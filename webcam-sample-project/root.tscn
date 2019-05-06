@@ -18,3 +18,10 @@ margin_bottom = 603.0
 rect_min_size = Vector2( 1920, 1080 )
 expand = true
 
+[node name="saveBtn" type="Button" parent="."]
+margin_left = 1674.0
+margin_top = 936.0
+margin_right = 1890.0
+margin_bottom = 1048.0
+text = "save image to disk"
+[connection signal="pressed" from="saveBtn" to="." method="_on_saveBtn_pressed"]

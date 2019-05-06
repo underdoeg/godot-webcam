@@ -71,7 +71,8 @@ public:
 		register_method("_enter_tree", &Webcam::_enter_tree);
 		register_method("start", &Webcam::start);
 		register_method("stop", &Webcam::stop);
-		register_method("getTexture", &Webcam::getTexture);
+		register_method("get_texture", &Webcam::getTexture);
+		register_method("get_image", &Webcam::getImage);
 	}
 
 	void _init();
@@ -84,6 +85,7 @@ public:
 	void stop();
 
 	godot::Ref<godot::ImageTexture> getTexture();
+	godot::Ref<godot::Image> getImage();
 
 private:
 	std::shared_ptr<Implementation> impl;
