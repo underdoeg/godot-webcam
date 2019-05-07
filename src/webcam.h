@@ -75,6 +75,7 @@ public:
 		register_method("stop", &Webcam::stop);
 		register_method("get_texture", &Webcam::getTexture);
 		register_method("get_image", &Webcam::getImage);
+		register_method("has_image", &Webcam::hasImage);
 	}
 
 	void _init();
@@ -86,6 +87,7 @@ public:
 
 	void stop();
 
+	bool hasImage();
 	godot::Ref<godot::ImageTexture> getTexture();
 	godot::Ref<godot::Image> getImage();
 

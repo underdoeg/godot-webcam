@@ -76,3 +76,8 @@ godot::Ref<godot::Image> Webcam::getImage() {
 
 	return impl->image;
 }
+
+bool Webcam::hasImage() {
+	if(!impl) return false;
+	return impl->image->get_width() > 0;
+}
