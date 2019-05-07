@@ -1,5 +1,5 @@
 # godot-webcam
-Webcam addon for godot (currently linux only, via v4l2)
+Webcam addon for godot (currently linux and mjpeg only, via v4l2)
 
 # build
 ```
