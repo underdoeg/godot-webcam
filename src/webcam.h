@@ -53,6 +53,7 @@ public:
 	};
 
 	bool autoStart = false;
+	bool autoTexture = true;
 	int width = 1280;
 	int height = 720;
 	godot::String device = "auto";
@@ -63,6 +64,7 @@ public:
 
 	static void _register_methods() {
 		register_property("auto_start", &Webcam::autoStart, false);
+		register_property("auto_texture", &Webcam::autoTexture, true);
 		register_property("width", &Webcam::width, 1280);
 		register_property("height", &Webcam::height, 720);
 		register_property("device", &Webcam::device, godot::String("auto"));

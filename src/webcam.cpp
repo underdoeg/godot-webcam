@@ -23,7 +23,7 @@ void Webcam::_init() {
 	Godot::print_error("No Webcam implementation found.", __FUNCTION__, __FILE__, __LINE__);
 #endif
 
-	if (impl) {
+	if (impl && autoTexture) {
 		impl->image = godot::Ref<godot::Image>(godot::Image::_new());
 	}
 }
@@ -32,7 +32,9 @@ void Webcam::_process(float dt) {
 	if (!impl) return;
 
 	if (impl->process(dt)) {
-		texture->set_data(impl->image);
+		if (autoTexture) {
+			texture->set_data(impl->image);
+		}
 	}
 }
 
