@@ -23,7 +23,7 @@ void Webcam::_init() {
 	Godot::print_error("No Webcam implementation found.", __FUNCTION__, __FILE__, __LINE__);
 #endif
 
-	if (impl && autoTexture) {
+	if (impl) {
 		impl->image = godot::Ref<godot::Image>(godot::Image::_new());
 	}
 }
@@ -43,7 +43,9 @@ void Webcam::start() {
 
 	Godot::print("Start Webcam");
 
-	texture->create(width, height, Image::Format::FORMAT_RGB8);
+	if (autoTexture) {
+		texture->create(width, height, Image::Format::FORMAT_RGB8);
+	}
 
 	impl->open({
 					   width, height,
