@@ -48,7 +48,9 @@ public:
 
 		// returns true if image data has changed
 		virtual bool process(float dt) = 0;
+
 		virtual void open(Settings s) = 0;
+
 		virtual void close() = 0;
 	};
 
@@ -79,6 +81,7 @@ public:
 	}
 
 	void _init();
+
 	void _enter_tree();
 
 	void _process(float dt);
@@ -88,7 +91,9 @@ public:
 	void stop();
 
 	bool hasImage();
+
 	godot::Ref<godot::ImageTexture> getTexture();
+
 	godot::Ref<godot::Image> getImage();
 
 private:

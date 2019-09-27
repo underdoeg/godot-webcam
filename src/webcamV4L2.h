@@ -19,8 +19,12 @@ class WebcamV4L2 : public Webcam::Implementation {
 
 	std::thread thread{};
 	std::atomic_bool bKeepRunning = false;
+	std::atomic_bool bReconnect = false;
+	std::atomic_bool bConnected = false;
 	std::atomic_bool bNewFrame = false;
 	std::mutex mtx{};
+
+	Webcam::Settings settings;
 
 	godot::Ref<godot::Image> imageThread;
 
@@ -34,6 +38,13 @@ public:
 	}
 
 	bool process(float dt) override {
+
+		if(bReconnect){
+			bReconnect = false;
+			open(settings);
+			return false;
+		}
+
 		if(bNewFrame){
 			std::scoped_lock g(mtx);
 			image->copy_from(imageThread);

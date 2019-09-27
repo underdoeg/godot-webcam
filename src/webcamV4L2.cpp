@@ -28,11 +28,19 @@ static int xioctl(int fd, int request, void *arg) {
 	return r;
 }
 
-void WebcamV4L2::open(Webcam::Settings settings) {
+void WebcamV4L2::open(Webcam::Settings s) {
 	close();
 
-	thread = std::thread([&, settings] {
+	settings = s;
+
+	thread = std::thread([&] {
 		bKeepRunning = true;
+		bConnected = false;
+
+		auto reconnect = [&]{
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+			bReconnect = true;
+		};
 
 		std::array<Buffer, 4> buffers{};
 		int fd;
@@ -52,18 +60,24 @@ void WebcamV4L2::open(Webcam::Settings settings) {
 
 		if (dev == "auto") {
 			Godot::print_error("Could not detect a camera", __FUNCTION__, __FILE__, __LINE__);
+			reconnect();
+			return;
 		}
 
 		// open device
 		fd = v4l2_open(dev.ascii().get_data(), O_RDWR | O_NONBLOCK, 0);
 		if (fd < 0) {
 			Godot::print_error("Failed to open device '" + settings.dev + "'", __FUNCTION__, __FILE__, __LINE__);
+			reconnect();
+			return;
 		}
 
 		// check if device is ready
 		v4l2_capability capability{};
 		if (ioctl(fd, VIDIOC_QUERYCAP, &capability) < 0) {
 			Godot::print_error("Failed to get device capabilities", __FUNCTION__, __FILE__, __LINE__);
+			reconnect();
+			return;
 		}
 
 		// set Image format
@@ -87,6 +101,8 @@ void WebcamV4L2::open(Webcam::Settings settings) {
 		// tell the device you are using this format
 		if (ioctl(fd, VIDIOC_S_FMT, &imageFormat) < 0) {
 			Godot::print_error("Failed to set capture format", __FUNCTION__, __FILE__, __LINE__);
+			reconnect();
+			return;
 		}
 
 		v4l2_requestbuffers req{};
@@ -96,6 +112,8 @@ void WebcamV4L2::open(Webcam::Settings settings) {
 
 		if (xioctl(fd, VIDIOC_REQBUFS, &req) < 0) {
 			Godot::print_error("Failed request buffers", __FUNCTION__, __FILE__, __LINE__);
+			reconnect();
+			return;
 		}
 
 		for (unsigned i = 0; i < req.count; i++) {
@@ -106,6 +124,8 @@ void WebcamV4L2::open(Webcam::Settings settings) {
 			buf.index = i;
 			if (xioctl(fd, VIDIOC_QUERYBUF, &buf) < 0) {
 				Godot::print_error("Failed to request buffer", __FUNCTION__, __FILE__, __LINE__);
+				reconnect();
+				return;
 			}
 
 			// map data to buffer
@@ -113,6 +133,8 @@ void WebcamV4L2::open(Webcam::Settings settings) {
 			buffers[i].start = reinterpret_cast<uint8_t *>(b);
 			if (MAP_FAILED == buffers[i].start) {
 				Godot::print_error("could not map buffer", __FUNCTION__, __FILE__, __LINE__);
+				reconnect();
+				return;
 			} else {
 				buffers[i].length = buf.length;
 			}
@@ -125,15 +147,21 @@ void WebcamV4L2::open(Webcam::Settings settings) {
 			buf.index = i;
 			if (xioctl(fd, VIDIOC_QBUF, &buf) < 0) {
 				Godot::print_error("Failed to exchange buffer", __FUNCTION__, __FILE__, __LINE__);
+				reconnect();
+				return;
 			}
 		}
 
 		auto type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		if (xioctl(fd, VIDIOC_STREAMON, &type) < 0) {
 			Godot::print_error("Failed to set capture format", __FUNCTION__, __FILE__, __LINE__);
+			reconnect();
+			return;
 		}
 
 		PoolByteArray godotBuffer;
+
+		bConnected = true;
 
 		while (bKeepRunning) {
 			fd_set fds;
@@ -149,12 +177,32 @@ void WebcamV4L2::open(Webcam::Settings settings) {
 
 			r = select(fd + 1, &fds, NULL, NULL, &tv);
 
-			if (errno == EBUSY) {
-				Godot::print("Device is busy");
-				continue;
+			switch(errno){
+				case EBUSY:
+					Godot::print("Device is busy");
+					continue;
+				case EIO:
+					Godot::print("Device IO Error");
+					continue;
+				case ENODEV:
+					Godot::print("Device was unplugged, will try to repoen");
+					reconnect();
+					bConnected = false;
+					return;
+				case EBADF:
+					Godot::print("Bad File number, will try to reconnect");
+					reconnect();
+					bConnected = false;
+					return;
 			}
 
+//			(errno == EBUSY) {
+//				Godot::print("Device is busy");
+//				continue;
+//			}
+
 			if (r <= 0) {
+//				printf("%i\n", errno);
 				continue;
 			}
 
