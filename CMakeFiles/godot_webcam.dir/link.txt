@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -shared -Wl,-soname,libgodot_webcam.so -o libgodot_webcam.so CMakeFiles/godot_webcam.dir/src/init.cpp.o CMakeFiles/godot_webcam.dir/src/webcam.cpp.o CMakeFiles/godot_webcam.dir/src/webcamV4L2.cpp.o  /usr/lib/libv4l2.so bin/libgodot-cpp.linux.debug.64.a -lturbojpeg 

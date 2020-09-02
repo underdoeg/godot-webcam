@@ -1,0 +1,6 @@
+/home/dschlaepfer/projects/stapferhaus/geschlecht/godot-webcam/CMakeFiles/rebuild_cache.dir
+/home/dschlaepfer/projects/stapferhaus/geschlecht/godot-webcam/CMakeFiles/edit_cache.dir
+/home/dschlaepfer/projects/stapferhaus/geschlecht/godot-webcam/CMakeFiles/godot_webcam.dir
+/home/dschlaepfer/projects/stapferhaus/geschlecht/godot-webcam/godot-cpp/CMakeFiles/rebuild_cache.dir
+/home/dschlaepfer/projects/stapferhaus/geschlecht/godot-webcam/godot-cpp/CMakeFiles/edit_cache.dir
+/home/dschlaepfer/projects/stapferhaus/geschlecht/godot-webcam/godot-cpp/CMakeFiles/godot-cpp.dir
