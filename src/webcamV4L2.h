@@ -1,9 +1,9 @@
 #pragma once
 
 #include <array>
-#include <thread>
 #include <atomic>
 #include <mutex>
+#include <thread>
 
 #include <gen/Image.hpp>
 
@@ -12,57 +12,57 @@
 #ifdef V4L2_FOUND
 
 class WebcamV4L2 : public Webcam::Implementation {
-	struct Buffer {
-		uint8_t *start;
-		size_t length;
-	};
+  struct Buffer {
+    uint8_t *start;
+    size_t length;
+  };
 
-	std::thread thread{};
-	std::atomic_bool bKeepRunning = false;
-	std::atomic_bool bReconnect = false;
-	std::atomic_bool bConnected = false;
-	std::atomic_bool bNewFrame = false;
-	std::mutex mtx{};
+  enum class JPEG_DECODER: int{
+    INTERNAL, UJPEG, TURBOJPEG
+  };
 
-	Webcam::Settings settings;
+  std::thread thread{};
+  std::atomic_bool bKeepRunning = false;
+  std::atomic_bool bReconnect = false;
+  std::atomic_bool bConnected = false;
+  std::atomic_bool bNewFrame = false;
+  std::mutex mtx{};
+  JPEG_DECODER jpeg_decoder = JPEG_DECODER::TURBOJPEG;
 
-	godot::Ref<godot::Image> imageThread;
+  Webcam::Settings settings;
+
+  godot::Ref<godot::Image> imageThread;
 
 public:
-	WebcamV4L2() {
-		imageThread = godot::Ref<godot::Image>(godot::Image::_new());
-	}
+  WebcamV4L2() { imageThread = godot::Ref<godot::Image>(godot::Image::_new()); }
 
-	~WebcamV4L2() {
-		close();
-	}
+  ~WebcamV4L2() { close(); }
 
-	bool process(float dt) override {
+  bool process(float dt) override {
 
-		if(bReconnect){
-			bReconnect = false;
-			open(settings);
-			return false;
-		}
+    if (bReconnect) {
+      bReconnect = false;
+      open(settings);
+      return false;
+    }
 
-		if(bNewFrame){
-			std::scoped_lock g(mtx);
-			image->copy_from(imageThread);
-			bNewFrame = false;
-			return true;
-		}
-		return false;
-	}
+    if (bNewFrame) {
+      std::scoped_lock g(mtx);
+      image->copy_from(imageThread);
+      bNewFrame = false;
+      return true;
+    }
+    return false;
+  }
 
-	void open(Webcam::Settings settings) override;
+  void open(Webcam::Settings settings) override;
 
-	void close() override {
-		bKeepRunning = false;
-		if (thread.joinable()) {
-			thread.join();
-		}
-	}
+  void close() override {
+    bKeepRunning = false;
+    if (thread.joinable()) {
+      thread.join();
+    }
+  }
 };
-
 
 #endif
