@@ -107,7 +107,11 @@ void Webcam::start() {
   Godot::print("Start Webcam");
 
   if (autoTexture) {
-    texture->create(width, height, Image::Format::FORMAT_RGB8);
+    if(rotation == 1 || rotation == 2){
+      texture->create(height, width, Image::Format::FORMAT_RGB8);
+    }else {
+      texture->create(width, height, Image::Format::FORMAT_RGB8);
+    }
   }
 
   impl->open({width, height, rotation, device, CaptureFormat::MJPEG});
