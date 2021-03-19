@@ -11,12 +11,18 @@ script = ExtResource( 2 )
 auto_start = true
 width = 1920
 height = 1080
+rotation = 1
 
 [node name="webcamView" type="TextureRect" parent="."]
-margin_right = 1024.0
-margin_bottom = 603.0
-rect_min_size = Vector2( 1920, 1080 )
+margin_left = 673.0
+margin_top = 48.0
+margin_right = 1215.0
+margin_bottom = 1008.0
+rect_min_size = Vector2( 540, 960 )
 expand = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="saveBtn" type="Button" parent="."]
 margin_left = 1674.0

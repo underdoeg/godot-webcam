@@ -38,6 +38,7 @@ public:
 	struct Settings {
 		int w;
 		int h;
+                int rotation;
 		godot::String dev;
 		CaptureFormat captureFormat;
 	};
@@ -58,6 +59,7 @@ public:
 	bool autoTexture = true;
 	int width = 1280;
 	int height = 720;
+        int rotation = 0;
 	godot::String device = "auto";
 	// TODO: allow other formats
 	godot::String captureFormat = "mjpeg";
@@ -70,6 +72,7 @@ public:
 		register_property("width", &Webcam::width, 1280);
 		register_property("height", &Webcam::height, 720);
 		register_property("device", &Webcam::device, godot::String("auto"));
+                register_property("rotation", &Webcam::rotation, 0);
 
 		register_method("_process", &Webcam::_process);
 		register_method("_enter_tree", &Webcam::_enter_tree);

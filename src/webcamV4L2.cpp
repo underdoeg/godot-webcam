@@ -268,6 +268,7 @@ void WebcamV4L2::open(Webcam::Settings s) {
 
         if (jpeg_decoder == JPEG_DECODER::UJPEG) {
           ujpeg->decode(godotBuffer.read().ptr(), godotBuffer.size());
+
           if (!ujpeg->bad()) {
             //            if (imageThread->get_data().size() !=
             //            njGetImageSize()) {

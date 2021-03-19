@@ -26,6 +26,7 @@ class WebcamV4L2 : public Webcam::Implementation {
   std::atomic_bool bReconnect = false;
   std::atomic_bool bConnected = false;
   std::atomic_bool bNewFrame = false;
+  std::atomic_int rotation = 0;
   std::mutex mtx{};
   JPEG_DECODER jpeg_decoder = JPEG_DECODER::TURBOJPEG;
 
