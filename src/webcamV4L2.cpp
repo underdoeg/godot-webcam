@@ -300,12 +300,13 @@ void WebcamV4L2::open(Webcam::Settings s) {
                               &width, &height, &jpegSubsamp);
           PoolByteArray data;
           data.resize(width * height * 3);
-          tjDecompress2(tj, godotBuffer.write().ptr(), godotBuffer.size(),
+          if(tjDecompress2(tj, godotBuffer.write().ptr(), godotBuffer.size(),
                         data.write().ptr(), width, 0 /*pitch*/, height,
-                        TJPF_RGB, TJFLAG_FASTDCT);
-          imageThread->create_from_data(width, height, false,
-                                        Image::FORMAT_RGB8, data);
-          bNewFrame = true;
+                        TJPF_RGB, TJFLAG_FASTDCT) >= 0) {
+            imageThread->create_from_data(width, height, false,
+                                          Image::FORMAT_RGB8, data);
+            bNewFrame = true;
+          }
 #endif
         } else {
           if (imageThread->load_jpg_from_buffer(godotBuffer) == Error::OK) {
