@@ -342,5 +342,6 @@ void WebcamV4L2::open(Webcam::Settings s) {
       v4l2_munmap(buffer.start, buffer.length);
     }
     v4l2_close(fd);
+    Godot::print("Release Webcam");
   });
 }

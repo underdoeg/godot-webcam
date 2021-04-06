@@ -29,76 +29,81 @@ GODOT_CLASS(Webcam, godot::Node)
 
 public:
 
-	enum CaptureFormat {
-		MJPEG,
-		RAW,
-		H264
-	};
+    enum CaptureFormat {
+        MJPEG,
+        RAW,
+        H264
+    };
 
-	struct Settings {
-		int w;
-		int h;
-                int rotation;
-		godot::String dev;
-		CaptureFormat captureFormat;
-	};
+    struct Settings {
+        int w;
+        int h;
+        int rotation;
+        godot::String dev;
+        CaptureFormat captureFormat;
+    };
 
-	class Implementation {
-	public:
-		godot::Ref<godot::Image> image;
+    class Implementation {
+    public:
+        godot::Ref<godot::Image> image;
 
-		// returns true if image data has changed
-		virtual bool process(float dt) = 0;
+        // returns true if image data has changed
+        virtual bool process(float dt) = 0;
 
-		virtual void open(Settings s) = 0;
+        virtual void open(Settings s) = 0;
 
-		virtual void close() = 0;
-	};
+        virtual void close() = 0;
+    };
 
-	bool autoStart = false;
-	bool autoTexture = true;
-	int width = 1280;
-	int height = 720;
-        int rotation = 0;
-	godot::String device = "auto";
-	// TODO: allow other formats
-	godot::String captureFormat = "mjpeg";
+    bool autoStart = false;
+    bool autoTexture = true;
+    int width = 1280;
+    int height = 720;
+    int rotation = 0;
+    godot::String device = "auto";
+    // TODO: allow other formats
+    godot::String captureFormat = "mjpeg";
 
-	godot::Ref<godot::ImageTexture> texture;
+    godot::Ref<godot::ImageTexture> texture;
 
-	static void _register_methods() {
-		register_property("auto_start", &Webcam::autoStart, false);
-		register_property("auto_texture", &Webcam::autoTexture, true);
-		register_property("width", &Webcam::width, 1280);
-		register_property("height", &Webcam::height, 720);
-		register_property("device", &Webcam::device, godot::String("auto"));
-                register_property("rotation", &Webcam::rotation, 0);
+    static void _register_methods() {
+        register_property("auto_start", &Webcam::autoStart, false);
+        register_property("auto_texture", &Webcam::autoTexture, true);
+        register_property("width", &Webcam::width, 1280);
+        register_property("height", &Webcam::height, 720);
+        register_property("device", &Webcam::device, godot::String("auto"));
+        register_property("rotation", &Webcam::rotation, 0);
 
-		register_method("_process", &Webcam::_process);
-		register_method("_enter_tree", &Webcam::_enter_tree);
-		register_method("start", &Webcam::start);
-		register_method("stop", &Webcam::stop);
-		register_method("get_texture", &Webcam::getTexture);
-		register_method("get_image", &Webcam::getImage);
-		register_method("has_image", &Webcam::hasImage);
-	}
+        register_method("_process", &Webcam::_process);
+        register_method("_enter_tree", &Webcam::_enter_tree);
+        register_method("_exit_tree", &Webcam::_exit_tree);
+        register_method("start", &Webcam::start);
+        register_method("stop", &Webcam::stop);
+        register_method("get_texture", &Webcam::getTexture);
+        register_method("get_image", &Webcam::getImage);
+        register_method("has_image", &Webcam::hasImage);
+    }
 
-	void _init();
+    void _init();
 
-	void _enter_tree();
+    void _enter_tree();
 
-	void _process(float dt);
+    void _exit_tree();
 
-	void start();
+    void _process(float dt);
 
-	void stop();
+    void _notification(int what);
 
-	bool hasImage();
+    void start();
 
-	godot::Ref<godot::ImageTexture> getTexture();
+    void stop();
 
-	godot::Ref<godot::Image> getImage();
+    bool hasImage();
+
+    godot::Ref<godot::ImageTexture> getTexture();
+
+    godot::Ref<godot::Image> getImage();
 
 private:
-	std::shared_ptr<Implementation> impl;
+    std::shared_ptr<Implementation> impl;
 };
