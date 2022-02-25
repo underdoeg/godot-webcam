@@ -6,8 +6,8 @@
 #include <Godot.hpp>
 #include <Node.hpp>
 #include <Reference.hpp>
-#include <gen/ImageTexture.hpp>
-#include <gen/EditorPlugin.hpp>
+#include <ImageTexture.hpp>
+#include <EditorPlugin.hpp>
 
 //class WebcamPlugin : public godot::EditorPlugin {
 //GODOT_CLASS(WebcamPlugin, godot::EditorPlugin)

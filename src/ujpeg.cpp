@@ -360,7 +360,7 @@ UJ_INLINE void ujDecodeDHT(ujContext *uj) {
       remain -= currcnt << (16 - codelen);
       if (remain < 0) ujThrow(UJ_SYNTAX_ERROR);
       for (i = 0;  i < currcnt;  ++i) {
-        register unsigned char code = uj->pos[i];
+        unsigned char code = uj->pos[i];
         for (j = spread;  j;  --j) {
           vlc->bits = (unsigned char) codelen;
           vlc->code = code;
@@ -668,9 +668,9 @@ UJ_INLINE void ujConvert(ujContext *uj, unsigned char *pout) {
     const unsigned char *pcr = uj->comp[2].pixels;
     for (yy = uj->height;  yy;  --yy) {
       for (x = 0;  x < uj->width;  ++x) {
-        register int y = py[x] << 8;
-        register int cb = pcb[x] - 128;
-        register int cr = pcr[x] - 128;
+        int y = py[x] << 8;
+        int cb = pcb[x] - 128;
+        int cr = pcr[x] - 128;
         *pout++ = ujClip((y            + 359 * cr + 128) >> 8);
         *pout++ = ujClip((y -  88 * cb - 183 * cr + 128) >> 8);
         *pout++ = ujClip((y + 454 * cb            + 128) >> 8);

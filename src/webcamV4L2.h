@@ -5,7 +5,7 @@
 #include <mutex>
 #include <thread>
 
-#include <gen/Image.hpp>
+#include <Image.hpp>
 
 #include "webcam.h"
 
