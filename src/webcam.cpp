@@ -114,7 +114,7 @@ void Webcam::start() {
         }
     }
 
-    impl->open({width, height, rotation, device, CaptureFormat::MJPEG});
+    impl->open({width, height, rotation, device, static_cast<CaptureFormat>(captureFormat)});
 }
 
 void Webcam::stop() {
@@ -150,4 +150,5 @@ bool Webcam::hasImage() {
         return false;
     return impl->image->get_width() > 0;
 }
+
 

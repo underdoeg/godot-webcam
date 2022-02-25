@@ -29,7 +29,7 @@ GODOT_CLASS(Webcam, godot::Node)
 
 public:
 
-    enum CaptureFormat {
+    enum class CaptureFormat: int {
         MJPEG,
         RAW,
         H264,
@@ -62,7 +62,7 @@ public:
     int rotation = 0;
     godot::String device = "auto";
     // TODO: allow other formats
-    godot::String captureFormat = "mjpeg";
+    int captureFormat = static_cast<int>(CaptureFormat::MJPEG);
 
     godot::Ref<godot::ImageTexture> texture;
 
@@ -74,6 +74,10 @@ public:
         register_property("device", &Webcam::device, godot::String("auto"));
         register_property("rotation", &Webcam::rotation, 0);
 
+        register_property("format", &Webcam::captureFormat, static_cast<int>(CaptureFormat::MJPEG),
+                                       GODOT_METHOD_RPC_MODE_DISABLED, GODOT_PROPERTY_USAGE_DEFAULT,
+                                       GODOT_PROPERTY_HINT_ENUM,  "mjpeg, raw");
+
         register_method("_process", &Webcam::_process);
         register_method("_enter_tree", &Webcam::_enter_tree);
         register_method("_exit_tree", &Webcam::_exit_tree);
@@ -82,6 +86,8 @@ public:
         register_method("get_texture", &Webcam::getTexture);
         register_method("get_image", &Webcam::getImage);
         register_method("has_image", &Webcam::hasImage);
+
+
     }
 
     ~Webcam(){
