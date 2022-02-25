@@ -32,7 +32,7 @@ public:
     enum CaptureFormat {
         MJPEG,
         RAW,
-        H264
+        H264,
     };
 
     struct Settings {
@@ -82,6 +82,10 @@ public:
         register_method("get_texture", &Webcam::getTexture);
         register_method("get_image", &Webcam::getImage);
         register_method("has_image", &Webcam::hasImage);
+    }
+
+    ~Webcam(){
+        stop();
     }
 
     void _init();
